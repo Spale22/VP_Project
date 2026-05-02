@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+using System;
+using System.Runtime.Serialization;
 
 namespace Common
 {
@@ -6,6 +7,16 @@ namespace Common
     public class SessionMetaData
     {
         [DataMember]
-        public int SessionId { get; set; }
+        public Guid SessionId { get; set; }
+
+        [DataMember]
+        public string SourceFileName { get; set; }
+
+        [DataMember]
+        public int ExpectedSampleCount { get; set; }
+
+        [DataMember]
+        public string[] TelemetryColumns { get; set; }
+
     }
 }

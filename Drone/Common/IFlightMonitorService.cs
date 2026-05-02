@@ -6,10 +6,11 @@ namespace Common
     public interface IFlightMonitorService
     {
         [OperationContract]
-        void StartSession();
+        [FaultContract(typeof(ValidationFault))]
+        void StartSession(SessionMetaData metadata);
         [OperationContract]
         [FaultContract(typeof(ValidationFault))]
-        void PushSample(FlightParameterSample sample);
+        PushSampleResponse PushSample(FlightParameterSample sample);
         [OperationContract]
         void EndSession();
     }

@@ -6,6 +6,11 @@ namespace Common
     public class ValidationFault
     {
         string message;
+
+        public ValidationFault()
+        {
+        }
+
         public ValidationFault(string message)
         {
             this.Message = message;

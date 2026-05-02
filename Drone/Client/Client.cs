@@ -17,7 +17,23 @@ namespace Client
                 using (CSVReader reader = new CSVReader("TestDataSet.csv"))
                 {
                     var samples = reader.ReadSamples("TestDataSet.csv");
-                    FlightSimulator fs = new FlightSimulator(samples);
+                    SessionMetaData sessionMetadata = new SessionMetaData
+                    {
+                        SessionId = Guid.NewGuid(),
+                        SourceFileName = "TestDataSet.csv",
+                        ExpectedSampleCount = samples.Count,
+                        TelemetryColumns = new[]
+                            {
+                                "LinearAccelerationX",
+                                "LinearAccelerationY",
+                                "LinearAccelerationZ",
+                                "WindSpeed",
+                                "WindAngle",
+                                "Time"
+                            }
+                    };
+
+                    FlightSimulator fs = new FlightSimulator(samples, sessionMetadata);
 
                     Console.WriteLine("Starting flight simulation...");
                     fs.SimulateFlight(proxy);
@@ -32,7 +48,7 @@ namespace Client
                 Console.WriteLine($"Client error: {ex.Message}");
             }
             finally
-            { 
+            {
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
             }

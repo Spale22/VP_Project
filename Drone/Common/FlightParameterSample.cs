@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
 namespace Common
 {
@@ -17,16 +16,20 @@ namespace Common
         [DataMember]
         public double WindAngle { get; set; }
         [DataMember]
-        public DateTime Time { get; set; }
+        public double FlightDuration { get; set; }
 
-        public FlightParameterSample(double linearAccelerationX, double linearAccelerationY, double linearAccelerationZ, double windSpeed, double windAngle, DateTime time)
+        public FlightParameterSample()
+        {
+        }
+
+        public FlightParameterSample(double linearAccelerationX, double linearAccelerationY, double linearAccelerationZ, double windSpeed, double windAngle, double time)
         {
             LinearAccelerationX = linearAccelerationX;
             LinearAccelerationY = linearAccelerationY;
             LinearAccelerationZ = linearAccelerationZ;
             WindSpeed = windSpeed;
             WindAngle = windAngle;
-            Time = time;
+            FlightDuration = time;
         }
     }
 }

@@ -43,9 +43,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums.cs" />
     <Compile Include="FlightParameterSample.cs" />
     <Compile Include="IFlightMonitorService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PushSampleResponse.cs" />
     <Compile Include="SessionMetaData.cs" />
     <Compile Include="ValidationFault.cs" />
   </ItemGroup>
