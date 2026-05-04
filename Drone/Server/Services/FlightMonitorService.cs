@@ -143,8 +143,15 @@ namespace Server.Services
             {
                 if (disposing)
                 {
-                    if (_sessionActive)
-                        EndSession();
+                    try
+                    {
+                        if (_sessionActive)
+                            EndSession();
+                    }
+                    catch (Exception ex)
+                    {
+                        _loggerService.LogError($"Error during disposal: {ex.Message}");
+                    }
 
                     _storageService?.Dispose();
                     _loggerService?.Dispose();

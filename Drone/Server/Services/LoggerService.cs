@@ -19,12 +19,11 @@ namespace Server.Services
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
-            _fileWriter = new StreamWriter(_logFilePath, append: true);
+            _fileWriter = new StreamWriter(_logFilePath, append: true, encoding: System.Text.Encoding.UTF8);
         }
 
         public void LogMessage(string message)
         {
-
             if (_disposed)
                 throw new ObjectDisposedException(nameof(LoggerService));
 
@@ -66,6 +65,7 @@ namespace Server.Services
                 {
                     if (_fileWriter != null)
                     {
+                        _fileWriter.Flush();
                         _fileWriter.Dispose();
                         _fileWriter = null;
                     }

@@ -20,14 +20,14 @@ namespace Client
             if (!File.Exists(_csvFilePath))
                 throw new FileNotFoundException($"The file {_csvFilePath} was not found.");
 
-            _csvReader = new StreamReader(_csvFilePath);
+            _csvReader = new StreamReader(_csvFilePath, System.Text.Encoding.UTF8);
 
             string overflowLogDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "OverflowLogs");
             if (!Directory.Exists(overflowLogDir))
                 Directory.CreateDirectory(overflowLogDir);
 
             string overflowFilePath = Path.Combine(overflowLogDir, $"rejected_rows_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
-            _overflowWriter = new StreamWriter(overflowFilePath, false);
+            _overflowWriter = new StreamWriter(overflowFilePath, false, System.Text.Encoding.UTF8);
             _overflowWriter.WriteLine("LineNumber,OriginalLine,ErrorMessage");
         }
 
@@ -96,13 +96,13 @@ namespace Client
                     // Parse the required fields
                     // Indices: 0=Time, 1=WindSpeed, 2=WindAngle, 18=AccelX, 19=AccelY, 20=AccelZ
                     double time = double.Parse(parameters[0], System.Globalization.CultureInfo.InvariantCulture);
-                    double wind_speed = double.Parse(parameters[1], System.Globalization.CultureInfo.InvariantCulture);
-                    double wind_angle = double.Parse(parameters[2], System.Globalization.CultureInfo.InvariantCulture);
-                    double linear_acceleration_x = double.Parse(parameters[18], System.Globalization.CultureInfo.InvariantCulture);
-                    double linear_acceleration_y = double.Parse(parameters[19], System.Globalization.CultureInfo.InvariantCulture);
-                    double linear_acceleration_z = double.Parse(parameters[20], System.Globalization.CultureInfo.InvariantCulture);
+                    double windSpeed = double.Parse(parameters[1], System.Globalization.CultureInfo.InvariantCulture);
+                    double windAngle = double.Parse(parameters[2], System.Globalization.CultureInfo.InvariantCulture);
+                    double linearAccelerationX = double.Parse(parameters[18], System.Globalization.CultureInfo.InvariantCulture);
+                    double linearAccelerationY = double.Parse(parameters[19], System.Globalization.CultureInfo.InvariantCulture);
+                    double linearAccelerationZ = double.Parse(parameters[20], System.Globalization.CultureInfo.InvariantCulture);
 
-                    samples.Add(new FlightParameterSample(linear_acceleration_x, linear_acceleration_y, linear_acceleration_z, wind_speed, wind_angle, time));
+                    samples.Add(new FlightParameterSample(linearAccelerationX, linearAccelerationY, linearAccelerationZ, windSpeed, windAngle, time));
                     sampleCount++;
                 }
                 catch (Exception ex)
@@ -118,6 +118,7 @@ namespace Client
                 lineNumber++;
                 _overflowWriter.WriteLine($"{lineNumber},\"{line}\",\"Row exceeds maxRowsRead limit ({maxRowsRead})\"");
             }
+            _overflowWriter.Flush();
 
             return samples;
         }

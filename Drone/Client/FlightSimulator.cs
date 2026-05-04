@@ -38,6 +38,11 @@ namespace Client
                     {
                         Console.WriteLine($"[Sample #{samplesSent + 1}] Status: NACK | Error: {validationEx.Detail.Message}");
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Sample #{samplesSent + 1}] Status: NACK | Unexpected error: {ex.Message}");
+                        break;
+                    }
                 }
 
                 Console.WriteLine($"[Flight Simulator] Transfer completed. {samplesSent}/{_samples.Count} samples sent successfully.");
@@ -52,8 +57,15 @@ namespace Client
             }
             finally
             {
-                if (sessionStarted)
-                    service.EndSession();
+                try
+                {
+                    if (sessionStarted)
+                        service.EndSession();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Flight Simulator] Error while ending session: {ex.Message}");
+                }
             }
         }
     }

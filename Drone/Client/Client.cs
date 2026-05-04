@@ -1,4 +1,4 @@
-﻿using Common;
+using Common;
 using System;
 using System.ServiceModel;
 
@@ -8,11 +8,13 @@ namespace Client
     {
         static void Main(string[] args)
         {
+            ChannelFactory<IFlightMonitorService> cf = null;
+            IFlightMonitorService proxy = null;
+
             try
             {
-                ChannelFactory<IFlightMonitorService> cf = new ChannelFactory<IFlightMonitorService>("FlightMonitorService");
-
-                IFlightMonitorService proxy = cf.CreateChannel();
+                cf = new ChannelFactory<IFlightMonitorService>("FlightMonitorService");
+                proxy = cf.CreateChannel();
 
                 using (CSVReader reader = new CSVReader("TestDataSet.csv"))
                 {
@@ -39,9 +41,6 @@ namespace Client
                     fs.SimulateFlight(proxy);
                     Console.WriteLine("Flight simulation completed.");
                 }
-
-                ((IClientChannel)proxy).Close();
-                cf.Close();
             }
             catch (Exception ex)
             {
@@ -49,6 +48,27 @@ namespace Client
             }
             finally
             {
+                try
+                {
+                    if (proxy != null)
+                    {
+                        var clientChannel = (IClientChannel)proxy;
+                        if (clientChannel?.State != CommunicationState.Closed)
+                            clientChannel?.Abort();
+                    }
+
+                    if (cf != null)
+                    {
+                        if (cf.State != CommunicationState.Closed)
+                            cf.Abort();
+                        cf.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error closing client: {ex.Message}");
+                }
+
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
             }

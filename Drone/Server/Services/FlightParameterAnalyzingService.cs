@@ -38,7 +38,7 @@ namespace Server.Services
         {
             UpdateRunningMean(sample);
             DetectWindDirectionShift(sample);
-            AngleOutOfBoundCheck(sample);
+            DetectOutOfBandWarning(sample);
             DetectLateralAsymmetry(sample);
 
             _windAnglePrevious = sample.WindAngle;
@@ -77,7 +77,7 @@ namespace Server.Services
             _windAngleMean = _windAngleSum / _sampleCount;
         }
 
-        private void AngleOutOfBoundCheck(FlightParameterSample sample)
+        private void DetectOutOfBandWarning(FlightParameterSample sample)
         {
             double lowerBound = _windAngleMean * (1 - _deviationPercentage);
             double upperBound = _windAngleMean * (1 + _deviationPercentage);

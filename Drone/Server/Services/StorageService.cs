@@ -64,6 +64,9 @@ namespace Server.Services
 
         public void WriteRejectedSample(FlightParameterSample sample, string reason)
         {
+            if (_disposed || _rejectsWriter == null)
+                throw new ObjectDisposedException(nameof(StorageService));
+
             try
             {
                 string line = $"{sample?.FlightDuration}," +
@@ -84,6 +87,9 @@ namespace Server.Services
         }
         public void EndSession()
         {
+            if (_disposed)
+                return;
+
             _measurementsWriter?.Flush();
             _measurementsWriter?.Dispose();
             _measurementsWriter = null;
