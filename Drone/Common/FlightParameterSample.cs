@@ -6,21 +6,17 @@ namespace Common
     public class FlightParameterSample
     {
         [DataMember]
-        public double LinearAccelerationX { get; set; }
+        public double LinearAccelerationX { get; private set; }
         [DataMember]
-        public double LinearAccelerationY { get; set; }
+        public double LinearAccelerationY { get; private set; }
         [DataMember]
-        public double LinearAccelerationZ { get; set; }
+        public double LinearAccelerationZ { get; private set; }
         [DataMember]
-        public double WindSpeed { get; set; }
+        public double WindSpeed { get; private set; }
         [DataMember]
-        public double WindAngle { get; set; }
+        public double WindAngle { get; private set; }
         [DataMember]
-        public double FlightDuration { get; set; }
-
-        public FlightParameterSample()
-        {
-        }
+        public double FlightDuration { get; private set; }
 
         public FlightParameterSample(double linearAccelerationX, double linearAccelerationY, double linearAccelerationZ, double windSpeed, double windAngle, double time)
         {

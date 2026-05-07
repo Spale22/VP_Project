@@ -7,16 +7,24 @@ namespace Common
     public class SessionMetaData
     {
         [DataMember]
-        public Guid SessionId { get; set; }
+        public Guid SessionId { get; private set; }
 
         [DataMember]
-        public string SourceFileName { get; set; }
+        public string SourceFileName { get; private set; }
 
         [DataMember]
-        public int ExpectedSampleCount { get; set; }
+        public int ExpectedSampleCount { get; private set; }
 
         [DataMember]
-        public string[] TelemetryColumns { get; set; }
+        public string[] TelemetryColumns { get; private set; }
+
+        public SessionMetaData(Guid sessionId, string sourceFileName, int expectedSampleCount, string[] telemetryColumns)
+        {
+            SessionId = sessionId;
+            SourceFileName = sourceFileName;
+            ExpectedSampleCount = expectedSampleCount;
+            TelemetryColumns = telemetryColumns;
+        }
 
     }
 }

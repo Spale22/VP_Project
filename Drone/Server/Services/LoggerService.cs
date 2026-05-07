@@ -6,9 +6,9 @@ namespace Server.Services
 {
     public class LoggerService : IDisposable
     {
-        string _logFilePath;
-        StreamWriter _fileWriter;
-        bool _disposed = false;
+        private string _logFilePath;
+        private StreamWriter _fileWriter;
+        private bool _disposed = false;
 
         public LoggerService()
         {

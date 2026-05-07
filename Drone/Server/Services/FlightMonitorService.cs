@@ -1,18 +1,21 @@
 ﻿using Common;
 using System;
+using System.Collections.Generic;
 using System.ServiceModel;
 
 namespace Server.Services
 {
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Single)]
     public class FlightMonitorService : IFlightMonitorService, IDisposable
     {
-        SessionMetaData _sessionMetadata;
-        ValidationService _validationService;
-        FlightParameterAnalyzingService _analyzingService;
-        LoggerService _loggerService;
-        StorageService _storageService;
-        bool _sessionActive = false;
-        bool _disposed = false;
+        private SessionMetaData _sessionMetadata;
+        private ValidationService _validationService;
+        private FlightParameterAnalyzingService _analyzingService;
+        private LoggerService _loggerService;
+        private StorageService _storageService;
+        private List<WarningDTO> _currentSampleWarnings;
+        private bool _sessionActive = false;
+        private bool _disposed = false;
 
         public FlightMonitorService()
         {
@@ -21,25 +24,13 @@ namespace Server.Services
             _loggerService = new LoggerService();
             _storageService = new StorageService();
 
-            _analyzingService.OnWindDirectionShift += (sender, args) =>
-            {
-                _loggerService.LogWarning($"Wind Direction Shift detected: Delta={args.DeltaWindAngle:F2}° Direction={args.Direction} Flight duration: {args.FlightDuration:F2}");
-            };
-
-            _analyzingService.OnOutOfBandWarning += (sender, args) =>
-            {
-                _loggerService.LogWarning($"Out-of-Band Warning: WindAngle={args.WindAngle:F2}° is {args.Deviation} expected (mean={args.RunningMean:F2}°) Flight duration: {args.FlightDuration:F2}");
-            };
-
-            _analyzingService.OnLateralAsymmetry += (sender, args) =>
-            {
-                _loggerService.LogWarning($"Lateral Asymmetry Warning: Wasym={args.Wasym:F4} Direction={args.Direction} Flight duration: {args.FlightDuration:F2}");
-            };
-
-            _analyzingService.OnSampleReceived += (sender, args) =>
-            {
-                _loggerService.LogMessage($"Sample received: #{args.SampleCount} Status: {args.Status}");
-            };
+            _analyzingService.OnWindDirectionShift += HandleWindDirectionShift;
+            _analyzingService.OnOutOfBandWarning += HandleOutOfBandWarning;
+            _analyzingService.OnLateralAsymmetry += HandleLateralAsymmetry;
+            _analyzingService.OnSampleReceived += HandleSampleReceived;
+            _analyzingService.OnTransferStarted += HandleTransferStarted;
+            _analyzingService.OnTransferCompleted += HandleTransferCompleted;
+            _analyzingService.OnWarningRaised += HandleWarningRaised;
         }
 
         public void StartSession(SessionMetaData metadata)
@@ -58,6 +49,8 @@ namespace Server.Services
                 _analyzingService.Reset();
                 _storageService.StartSession();
                 _loggerService.LogMessage($"Session started: Id={metadata.SessionId}, Source={metadata.SourceFileName}, Samples={metadata.ExpectedSampleCount}");
+
+                _analyzingService.RaiseTransferStarted(metadata.ExpectedSampleCount);
             }
             catch (Exception ex)
             {
@@ -77,6 +70,8 @@ namespace Server.Services
 
             try
             {
+                _currentSampleWarnings = new List<WarningDTO>();
+
                 _validationService.ValidateSample(sample);
 
                 _analyzingService.AnalyzeSample(sample);
@@ -87,12 +82,8 @@ namespace Server.Services
 
                 int currentCount = _analyzingService.GetSampleCount();
                 SessionStatus sessionStatus = SessionStatus.IN_PROGRESS;
-                if (_sessionMetadata != null && _sessionMetadata.ExpectedSampleCount > 0 && currentCount >= _sessionMetadata.ExpectedSampleCount)
-                {
-                    sessionStatus = SessionStatus.COMPLETED;
-                }
 
-                return new PushSampleResponse("ACK", "Sample processed successfully", currentCount, sessionStatus);
+                return new PushSampleResponse(AckStatus.ACK, "Sample processed successfully", currentCount, sessionStatus, _currentSampleWarnings);
             }
             catch (FaultException<ValidationFault> vf)
             {
@@ -105,6 +96,10 @@ namespace Server.Services
                 _loggerService.LogError($"Error processing sample: {ex.Message}");
                 _storageService.WriteRejectedSample(sample, ex.Message);
                 throw;
+            }
+            finally
+            {
+                _currentSampleWarnings = null;
             }
         }
 
@@ -130,6 +125,10 @@ namespace Server.Services
                 throw;
             }
         }
+        ~FlightMonitorService()
+        {
+            Dispose(false);
+        }
 
         public void Dispose()
         {
@@ -153,6 +152,14 @@ namespace Server.Services
                         _loggerService.LogError($"Error during disposal: {ex.Message}");
                     }
 
+                    _analyzingService.OnWindDirectionShift -= HandleWindDirectionShift;
+                    _analyzingService.OnOutOfBandWarning -= HandleOutOfBandWarning;
+                    _analyzingService.OnLateralAsymmetry -= HandleLateralAsymmetry;
+                    _analyzingService.OnSampleReceived -= HandleSampleReceived;
+                    _analyzingService.OnTransferStarted -= HandleTransferStarted;
+                    _analyzingService.OnTransferCompleted -= HandleTransferCompleted;
+                    _analyzingService.OnWarningRaised -= HandleWarningRaised;
+
                     _storageService?.Dispose();
                     _loggerService?.Dispose();
                 }
@@ -160,9 +167,48 @@ namespace Server.Services
             }
         }
 
-        ~FlightMonitorService()
+        private void HandleWindDirectionShift(object sender, WindDirectionShiftEventArgs args)
         {
-            Dispose(false);
+            var warning = new WarningDTO(WarningType.WindDirectionShift, args.FlightDuration, args.DeltaWindAngle, args.Direction);
+
+            _currentSampleWarnings?.Add(warning);
+            _loggerService.LogWarning($"Wind Direction Shift detected: Delta={args.DeltaWindAngle:F2}° Direction={args.Direction} Flight duration: {args.FlightDuration:F2}");
         }
+
+        private void HandleOutOfBandWarning(object sender, OutOfBandWarningEventArgs args)
+        {
+            var warning = new WarningDTO(WarningType.OutOfBand, args.FlightDuration, args.WindAngle, args.RunningMean, args.Deviation);
+
+            _currentSampleWarnings?.Add(warning);
+            _loggerService.LogWarning($"Out-of-Band Warning: WindAngle={args.WindAngle:F2}° is {args.Deviation} expected (mean={args.RunningMean:F2}°) Flight duration: {args.FlightDuration:F2}");
+        }
+
+        private void HandleLateralAsymmetry(object sender, LateralAsymmetryEventArgs args)
+        {
+            var warning = new WarningDTO(WarningType.LateralAsymmetry, args.FlightDuration, args.Wasym, args.Direction);
+            _currentSampleWarnings?.Add(warning);
+            _loggerService.LogWarning($"Lateral Asymmetry Warning: Wasym={args.Wasym:F4} Direction={args.Direction} Flight duration: {args.FlightDuration:F2}");
+        }
+
+        private void HandleSampleReceived(object sender, SampleReceivedEventArgs args)
+        {
+            _loggerService.LogMessage($"Sample received: #{args.SampleCount} Session Status: {args.Status}");
+        }
+
+        private void HandleTransferStarted(object sender, TransferStartedEventArgs args)
+        {
+            _loggerService.LogMessage($"Transfer started. Expected samples: {args.ExpectedSampleCount}");
+        }
+
+        private void HandleTransferCompleted(object sender, TransferCompletedEventArgs args)
+        {
+            _loggerService.LogMessage($"Transfer completed. Total samples: {args.TotalSamplesReceived}, Session Status: {args.FinalStatus}");
+        }
+
+        private void HandleWarningRaised(object sender, WarningRaisedEventArgs args)
+        {
+            _loggerService.LogWarning($"Warning raised - Type: {args.WarningType}, Duration: {args.Warning.FlightDuration:F2}");
+        }
+
     }
 }

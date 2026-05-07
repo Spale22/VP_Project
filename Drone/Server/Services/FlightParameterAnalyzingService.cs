@@ -6,18 +6,21 @@ namespace Server.Services
 {
     public class FlightParameterAnalyzingService
     {
-        double _windAnglePrevious = double.NaN;
-        double _windAngleSum = 0;
-        int _sampleCount = 0;
-        double _windAngleMean = 0;
-        double _w_threshold;
-        double _l_threshold;
-        double _deviationPercentage;
+        private double _windAnglePrevious = double.NaN;
+        private double _windAngleSum = 0;
+        private int _sampleCount = 0;
+        private double _windAngleMean = 0;
+        private double _w_threshold;
+        private double _l_threshold;
+        private double _deviationPercentage;
 
         public event EventHandler<WindDirectionShiftEventArgs> OnWindDirectionShift;
         public event EventHandler<OutOfBandWarningEventArgs> OnOutOfBandWarning;
         public event EventHandler<LateralAsymmetryEventArgs> OnLateralAsymmetry;
         public event EventHandler<SampleReceivedEventArgs> OnSampleReceived;
+        public event EventHandler<TransferStartedEventArgs> OnTransferStarted;
+        public event EventHandler<TransferCompletedEventArgs> OnTransferCompleted;
+        public event EventHandler<WarningRaisedEventArgs> OnWarningRaised;
 
         public FlightParameterAnalyzingService()
         {
@@ -55,8 +58,23 @@ namespace Server.Services
             return _sampleCount;
         }
 
+        public void RaiseTransferStarted(int expectedSampleCount)
+        {
+            OnTransferStarted?.Invoke(this, new TransferStartedEventArgs { ExpectedSampleCount = expectedSampleCount });
+        }
+
+        public void RaiseTransferCompleted(int totalSamples, SessionStatus finalStatus)
+        {
+            OnTransferCompleted?.Invoke(this, new TransferCompletedEventArgs { TotalSamplesReceived = totalSamples, FinalStatus = finalStatus });
+        }
+
+        public void RaiseWarning(WarningDTO warning, WarningType warningType)
+        {
+            OnWarningRaised?.Invoke(this, new WarningRaisedEventArgs { Warning = warning, WarningType = warningType });
+        }
+
         private void DetectWindDirectionShift(FlightParameterSample sample)
-        { 
+        {
             double deltaWindAngle = sample.WindAngle - _windAnglePrevious;
             if (Math.Abs(deltaWindAngle) > _w_threshold)
             {

@@ -36,4 +36,21 @@ namespace Server.Services
         public SessionStatus Status { get; set; }
         public double FlightDuration { get; set; }
     }
+
+    public class TransferStartedEventArgs : EventArgs
+    {
+        public int ExpectedSampleCount { get; set; }
+    }
+
+    public class TransferCompletedEventArgs : EventArgs
+    {
+        public int TotalSamplesReceived { get; set; }
+        public SessionStatus FinalStatus { get; set; }
+    }
+
+    public class WarningRaisedEventArgs : EventArgs
+    {
+        public WarningDTO Warning { get; set; }
+        public WarningType WarningType { get; set; }
+    }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace Common
@@ -6,23 +7,27 @@ namespace Common
     public class PushSampleResponse
     {
         [DataMember]
-        public string Status { get; set; }
+        public AckStatus Status { get; private set; }
 
         [DataMember]
-        public string Message { get; set; }
+        public string Message { get; private set; }
 
         [DataMember]
-        public int SampleNumber { get; set; }
+        public int SampleNumber { get; private set; }
 
         [DataMember]
-        public SessionStatus SessionStatus { get; set; }
+        public SessionStatus SessionStatus { get; private set; }
 
-        public PushSampleResponse(string status, string message, int sampleNumber, SessionStatus sessionStatus)
+        [DataMember]
+        public List<WarningDTO> Warnings { get; private set; }
+
+        public PushSampleResponse(AckStatus status, string message, int sampleNumber, SessionStatus sessionStatus, List<WarningDTO> warnings = null)
         {
             Status = status;
             Message = message;
             SampleNumber = sampleNumber;
             SessionStatus = sessionStatus;
+            Warnings = warnings ?? new List<WarningDTO>();
         }
     }
 }

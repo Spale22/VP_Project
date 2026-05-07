@@ -8,10 +8,10 @@ namespace Client
 {
     public class CSVReader : IDisposable
     {
-        bool _disposed = false;
-        StreamReader _csvReader;
-        StreamWriter _overflowWriter;
-        string _csvFilePath;
+        private bool _disposed = false;
+        private StreamReader _csvReader;
+        private StreamWriter _overflowWriter;
+        private string _csvFilePath;
 
         public CSVReader(string filePath)
         {
@@ -68,6 +68,13 @@ namespace Client
         public List<FlightParameterSample> ReadSamples(string filePath)
         {
             int maxRowsRead = int.Parse(ConfigurationManager.AppSettings["MaxRowsRead"]);
+            int colTime = int.Parse(ConfigurationManager.AppSettings["CSVColumnTime"] ?? "0");
+            int colWindSpeed = int.Parse(ConfigurationManager.AppSettings["CSVColumnWindSpeed"] ?? "1");
+            int colWindAngle = int.Parse(ConfigurationManager.AppSettings["CSVColumnWindAngle"] ?? "2");
+            int colAccelX = int.Parse(ConfigurationManager.AppSettings["CSVColumnAccelX"] ?? "18");
+            int colAccelY = int.Parse(ConfigurationManager.AppSettings["CSVColumnAccelY"] ?? "19");
+            int colAccelZ = int.Parse(ConfigurationManager.AppSettings["CSVColumnAccelZ"] ?? "20");
+
             List<FlightParameterSample> samples = new List<FlightParameterSample>(maxRowsRead);
 
             string line = _csvReader.ReadLine();
@@ -84,23 +91,23 @@ namespace Client
 
                 string[] parameters = line.Split(',');
 
-                if (parameters.Length < 21)
+                int maxIndex = Math.Max(Math.Max(Math.Max(colTime, colWindSpeed), Math.Max(colWindAngle, colAccelX)), Math.Max(colAccelY, colAccelZ));
+                if (parameters.Length < maxIndex + 1)
                 {
-                    _overflowWriter.WriteLine($"{lineNumber},\"{line}\",\"Invalid column count: expected ~21, got {parameters.Length}\"");
+                    _overflowWriter.WriteLine($"{lineNumber},\"{line}\",\"Invalid column count: expected at least {maxIndex + 1}, got {parameters.Length}\"");
                     _overflowWriter.Flush();
                     continue;
                 }
 
                 try
                 {
-                    // Parse the required fields
-                    // Indices: 0=Time, 1=WindSpeed, 2=WindAngle, 18=AccelX, 19=AccelY, 20=AccelZ
-                    double time = double.Parse(parameters[0], System.Globalization.CultureInfo.InvariantCulture);
-                    double windSpeed = double.Parse(parameters[1], System.Globalization.CultureInfo.InvariantCulture);
-                    double windAngle = double.Parse(parameters[2], System.Globalization.CultureInfo.InvariantCulture);
-                    double linearAccelerationX = double.Parse(parameters[18], System.Globalization.CultureInfo.InvariantCulture);
-                    double linearAccelerationY = double.Parse(parameters[19], System.Globalization.CultureInfo.InvariantCulture);
-                    double linearAccelerationZ = double.Parse(parameters[20], System.Globalization.CultureInfo.InvariantCulture);
+                    // Parse the required fields using configurable indices
+                    double time = double.Parse(parameters[colTime], System.Globalization.CultureInfo.InvariantCulture);
+                    double windSpeed = double.Parse(parameters[colWindSpeed], System.Globalization.CultureInfo.InvariantCulture);
+                    double windAngle = double.Parse(parameters[colWindAngle], System.Globalization.CultureInfo.InvariantCulture);
+                    double linearAccelerationX = double.Parse(parameters[colAccelX], System.Globalization.CultureInfo.InvariantCulture);
+                    double linearAccelerationY = double.Parse(parameters[colAccelY], System.Globalization.CultureInfo.InvariantCulture);
+                    double linearAccelerationZ = double.Parse(parameters[colAccelZ], System.Globalization.CultureInfo.InvariantCulture);
 
                     samples.Add(new FlightParameterSample(linearAccelerationX, linearAccelerationY, linearAccelerationZ, windSpeed, windAngle, time));
                     sampleCount++;

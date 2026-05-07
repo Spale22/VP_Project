@@ -1,39 +1,28 @@
 using Common;
 using System;
+using System.Configuration;
 using System.ServiceModel;
 
 namespace Client
 {
-    internal class Client
+    public class Client
     {
         static void Main(string[] args)
         {
             ChannelFactory<IFlightMonitorService> cf = null;
             IFlightMonitorService proxy = null;
+            string dataSetFileName = ConfigurationManager.AppSettings["DataSetFileName"];
 
             try
             {
                 cf = new ChannelFactory<IFlightMonitorService>("FlightMonitorService");
                 proxy = cf.CreateChannel();
 
-                using (CSVReader reader = new CSVReader("TestDataSet.csv"))
+                using (CSVReader reader = new CSVReader(dataSetFileName))
                 {
-                    var samples = reader.ReadSamples("TestDataSet.csv");
-                    SessionMetaData sessionMetadata = new SessionMetaData
-                    {
-                        SessionId = Guid.NewGuid(),
-                        SourceFileName = "TestDataSet.csv",
-                        ExpectedSampleCount = samples.Count,
-                        TelemetryColumns = new[]
-                            {
-                                "LinearAccelerationX",
-                                "LinearAccelerationY",
-                                "LinearAccelerationZ",
-                                "WindSpeed",
-                                "WindAngle",
-                                "Time"
-                            }
-                    };
+                    var samples = reader.ReadSamples(dataSetFileName);
+
+                    SessionMetaData sessionMetadata = new SessionMetaData(Guid.NewGuid(), dataSetFileName, samples.Count, new[] { "LinearAccelerationX", "LinearAccelerationY", "LinearAccelerationZ", "WindSpeed", "WindAngle", "Time" });
 
                     FlightSimulator fs = new FlightSimulator(samples, sessionMetadata);
 

@@ -7,7 +7,7 @@ namespace Server.Services
 {
     public class ValidationService
     {
-        private static readonly string[] RequiredTelemetryColumns =
+        private static readonly string[] _requiredTelemetryColumns =
         {
             "LinearAccelerationX",
             "LinearAccelerationY",
@@ -31,7 +31,7 @@ namespace Server.Services
             if (metadata.TelemetryColumns == null || metadata.TelemetryColumns.Length == 0)
                 throw new FaultException<ValidationFault>(new ValidationFault("TelemetryColumns are required."));
 
-            var missingColumns = RequiredTelemetryColumns
+            var missingColumns = _requiredTelemetryColumns
                 .Except(metadata.TelemetryColumns, StringComparer.OrdinalIgnoreCase)
                 .ToArray();
 
@@ -44,12 +44,12 @@ namespace Server.Services
             if (sample == null)
                 throw new FaultException<ValidationFault>(new ValidationFault("Sample cannot be null."));
 
-            ValidateFinite(sample.LinearAccelerationX, nameof(sample.LinearAccelerationX));
-            ValidateFinite(sample.LinearAccelerationY, nameof(sample.LinearAccelerationY));
-            ValidateFinite(sample.LinearAccelerationZ, nameof(sample.LinearAccelerationZ));
-            ValidateFinite(sample.WindSpeed, nameof(sample.WindSpeed));
-            ValidateFinite(sample.WindAngle, nameof(sample.WindAngle));
-            ValidateFinite(sample.FlightDuration, nameof(sample.FlightDuration));
+            ValidateParameter(sample.LinearAccelerationX, nameof(sample.LinearAccelerationX));
+            ValidateParameter(sample.LinearAccelerationY, nameof(sample.LinearAccelerationY));
+            ValidateParameter(sample.LinearAccelerationZ, nameof(sample.LinearAccelerationZ));
+            ValidateParameter(sample.WindSpeed, nameof(sample.WindSpeed));
+            ValidateParameter(sample.WindAngle, nameof(sample.WindAngle));
+            ValidateParameter(sample.FlightDuration, nameof(sample.FlightDuration));
 
             if (sample.WindSpeed <= 0)
                 throw new FaultException<ValidationFault>(new ValidationFault("WindSpeed must be greater than zero."));
@@ -61,14 +61,14 @@ namespace Server.Services
                 throw new FaultException<ValidationFault>(new ValidationFault("Linear acceleration values are outside the expected range."));
             }
 
-            if (Math.Abs(sample.WindAngle) > 3600)
+            if (Math.Abs(sample.WindAngle) > 360)
                 throw new FaultException<ValidationFault>(new ValidationFault("WindAngle is outside the expected range."));
 
             if (sample.FlightDuration < 0)
                 throw new FaultException<ValidationFault>(new ValidationFault("FlightDuration is outside the expected range."));
         }
 
-        private static void ValidateFinite(double value, string fieldName)
+        private static void ValidateParameter(double value, string fieldName)
         {
             if (double.IsNaN(value) || double.IsInfinity(value))
                 throw new FaultException<ValidationFault>(new ValidationFault($"{fieldName} contains an invalid numeric value."));

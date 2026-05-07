@@ -7,8 +7,8 @@ namespace Client
 {
     public class FlightSimulator
     {
-        List<FlightParameterSample> _samples;
-        SessionMetaData _sessionMetadata;
+        private List<FlightParameterSample> _samples;
+        private SessionMetaData _sessionMetadata;
 
         public FlightSimulator(List<FlightParameterSample> samples, SessionMetaData sessionMetadata)
         {
@@ -33,6 +33,14 @@ namespace Client
                         PushSampleResponse response = service.PushSample(sample);
                         samplesSent++;
                         Console.WriteLine($"[Sample #{response.SampleNumber}] Status: {response.Status} | Message: {response.Message} | SessionStatus: {response.SessionStatus}");
+
+                        if (response.Warnings != null && response.Warnings.Count > 0)
+                        {
+                            foreach (var warning in response.Warnings)
+                            {
+                                Console.WriteLine(FormatWarning(response.SampleNumber, warning));
+                            }
+                        }
                     }
                     catch (FaultException<ValidationFault> validationEx)
                     {
@@ -66,6 +74,21 @@ namespace Client
                 {
                     Console.WriteLine($"[Flight Simulator] Error while ending session: {ex.Message}");
                 }
+            }
+        }
+
+        private static string FormatWarning(int sampleNumber, WarningDTO warning)
+        {
+            switch (warning.WarningType)
+            {
+                case WarningType.WindDirectionShift:
+                    return $"[Sample #{sampleNumber}] WARNING: WindDirectionShift | Delta={warning.DeltaWindAngle:F2}° | Direction={warning.Direction} | Duration={warning.FlightDuration:F2}";
+                case WarningType.OutOfBand:
+                    return $"[Sample #{sampleNumber}] WARNING: OutOfBand | WindAngle={warning.WindAngle:F2}° | Mean={warning.RunningMean:F2}° | Deviation={warning.Deviation} | Duration={warning.FlightDuration:F2}";
+                case WarningType.LateralAsymmetry:
+                    return $"[Sample #{sampleNumber}] WARNING: LateralAsymmetry | Wasym={warning.Wasym:F4} | Duration={warning.FlightDuration:F2}";
+                default:
+                    return $"[Sample #{sampleNumber}] WARNING: Unknown warning type";
             }
         }
     }

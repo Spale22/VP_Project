@@ -8,10 +8,10 @@ namespace Server.Services
 {
     public class StorageService : IDisposable
     {
-        StreamWriter _measurementsWriter;
-        StreamWriter _rejectsWriter;
-        string _outputPath;
-        bool _disposed = false;
+        private StreamWriter _measurementsWriter;
+        private StreamWriter _rejectsWriter;
+        private string _outputPath;
+        private bool _disposed = false;
 
         public StorageService()
         {

@@ -50,6 +50,7 @@
     <Compile Include="PushSampleResponse.cs" />
     <Compile Include="SessionMetaData.cs" />
     <Compile Include="ValidationFault.cs" />
+    <Compile Include="WarningDTO.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

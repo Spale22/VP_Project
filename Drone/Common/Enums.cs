@@ -46,4 +46,15 @@ namespace Common
         [EnumMember]
         NACK
     }
+
+    [DataContract]
+    public enum WarningType
+    {
+        [EnumMember]
+        WindDirectionShift,
+        [EnumMember]
+        OutOfBand,
+        [EnumMember]
+        LateralAsymmetry
+    }
 }

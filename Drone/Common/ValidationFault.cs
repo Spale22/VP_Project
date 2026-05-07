@@ -5,18 +5,14 @@ namespace Common
     [DataContract]
     public class ValidationFault
     {
-        string message;
-
-        public ValidationFault()
-        {
-        }
+        private string _message;
 
         public ValidationFault(string message)
         {
-            this.Message = message;
+            _message = message;
         }
 
         [DataMember]
-        public string Message { get => message; set => message = value; }
+        public string Message { get => _message; private set => _message = value; }
     }
 }
